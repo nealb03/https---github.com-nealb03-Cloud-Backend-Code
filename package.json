@@ -1,21 +1,18 @@
 {
-  "name": "my-app",
+  "name": "cloud-backend",
   "version": "1.0.0",
+  "type": "module",
+  "description": "Backend server for Cloud projects",
   "main": "server.js",
   "scripts": {
-    "dev": "vite",
     "start": "node server.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
     "dotenv": "^17.2.2",
-    "express": "^5.1.0",
-    "mysql2": "^3.1.0"
+    "express": "^4.18.2",
+    "mysql2": "^3.3.2"
   },
-  "devDependencies": {
-    "@vitejs/plugin-react": "^5.0.2",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "vite": "^4.0.0"
-  }
+  "author": "Your Name",
+  "license": "ISC"
 }
