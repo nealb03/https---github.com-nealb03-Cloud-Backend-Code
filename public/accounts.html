@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Accounts</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+    }
+    h1 {
+      color: #333;
+    }
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      margin-top: 15px;
+    }
+    th, td {
+      border: 1px solid #999;
+      padding: 8px 12px;
+      text-align: left;
+    }
+    th {
+      background-color: #f2f2f2;
+    }
+    tbody tr:nth-child(even) {
+      background-color: #f9f9f9;
+    }
+  </style>
+</head>
+<body>
+  <h1>Accounts</h1>
+  <table id="accounts-table">
+    <thead></thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    fetch('/api/accounts')
+      .then(response => response.json())
+      .then(data => {
+        const tableHead = document.querySelector('#accounts-table thead');
+        const tableBody = document.querySelector('#accounts-table tbody');
+
+        if (data.length === 0) {
+          tableBody.innerHTML = '<tr><td colspan="100%">No accounts found</td></tr>';
+          return;
+        }
+
+        // Create table header using keys of the first object
+        const headers = Object.keys(data[0]);
+        // Capitalize and replace underscores with spaces for headers
+        const formattedHeaders = headers.map(h => h.replace(/_/g, ' ').toUpperCase());
+
+        tableHead.innerHTML = '<tr>' + formattedHeaders.map(header => `<th>${header}</th>`).join('') + '</tr>';
+
+        // Create table rows
+        const rowsHtml = data.map(account => {
+          return '<tr>' + headers.map(header => `<td>${account[header] ?? ''}</td>`).join('') + '</tr>';
+        }).join('');
+
+        tableBody.innerHTML = rowsHtml;
+      })
+      .catch(error => {
+        console.error('Error fetching accounts:', error);
+        const tableBody = document.querySelector('#accounts-table tbody');
+        tableBody.innerHTML = '<tr><td colspan="100%">Error loading accounts data</td></tr>';
+      });
+  </script>
+</body>
+</html>

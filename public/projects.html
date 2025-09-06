@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Projects</title>
+  <style>
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #999; padding: 8px; text-align: left; }
+    th { background-color: #eee; }
+  </style>
+</head>
+<body>
+  <h1>Projects</h1>
+  <table id="projects-table">
+    <thead></thead>
+    <tbody></tbody>
+  </table>
+
+  <script>
+    fetch('/api/projects')
+      .then(response => response.json())
+      .then(data => {
+        if (data.length === 0) return;
+
+        // Build table header
+        const thead = document.querySelector('#projects-table thead');
+        const headers = Object.keys(data[0]);
+        thead.innerHTML = '<tr>' + headers.map(h => `<th>${h}</th>`).join('') + '</tr>';
+
+        // Build table body
+        const tbody = document.querySelector('#projects-table tbody');
+        tbody.innerHTML = data.map(row => {
+          return '<tr>' + headers.map(h => `<td>${row[h]}</td>`).join('') + '</tr>';
+        }).join('');
+      })
+      .catch(err => {
+        document.body.innerHTML = '<p>Error loading data</p>';
+        console.error(err);
+      });
+  </script>
+</body>
+</html>
