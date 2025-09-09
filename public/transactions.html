@@ -3,29 +3,13 @@
 <head>
   <title>Transactions</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-    }
-    h1 {
-      color: #333;
-    }
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      margin-top: 15px;
-    }
-    th, td {
-      border: 1px solid #999;
-      padding: 8px 12px;
-      text-align: left;
-    }
-    th {
-      background-color: #f2f2f2;
-    }
-    tbody tr:nth-child(even) {
-      background-color: #f9f9f9;
-    }
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 15px; }
+    th, td { border: 1px solid #999; padding: 8px 12px; text-align: left; }
+    th { background-color: #f2f2f2; }
+    tbody tr:nth-child(even) { background-color: #f9f9f9; }
+    #pagination { margin-top: 20px; }
+    #pagination button { padding: 5px 10px; margin-right: 5px; }
   </style>
 </head>
 <body>
@@ -34,38 +18,69 @@
     <thead></thead>
     <tbody></tbody>
   </table>
+  <div id="pagination">
+    <button id="prev-btn" disabled>Prev</button>
+    <span id="page-info"></span>
+    <button id="next-btn" disabled>Next</button>
+  </div>
 
   <script>
-    fetch('/api/transactions')
-      .then(response => response.json())
-      .then(data => {
-        const tableHead = document.querySelector('#transactions-table thead');
-        const tableBody = document.querySelector('#transactions-table tbody');
+    let currentPage = 1;
+    const limit = 10;
+
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const pageInfo = document.getElementById('page-info');
+    const thead = document.querySelector('#transactions-table thead');
+    const tbody = document.querySelector('#transactions-table tbody');
+
+    async function fetchTransactions(page = 1) {
+      try {
+        const res = await fetch(`/api/transactions?page=${page}&limit=${limit}`);
+        if (!res.ok) throw new Error('Network error');
+
+        const { data, totalPages } = await res.json();
 
         if (data.length === 0) {
-          tableBody.innerHTML = '<tr><td colspan="100%">No transactions found</td></tr>';
+          tbody.innerHTML = '<tr><td colspan="100%">No transactions found</td></tr>';
+          thead.innerHTML = '';
+          pageInfo.textContent = '';
+          prevBtn.disabled = true;
+          nextBtn.disabled = true;
           return;
         }
 
-        // Create table header using keys of the first object
         const headers = Object.keys(data[0]);
-        // Capitalize and replace underscores with spaces in headers for readability
-        const formattedHeaders = headers.map(h => h.replace(/_/g, ' ').toUpperCase());
+        thead.innerHTML = '<tr>' + headers.map(h => `<th>${h.replace(/_/g, ' ').toUpperCase()}</th>`).join('') + '</tr>';
 
-        tableHead.innerHTML = '<tr>' + formattedHeaders.map(header => `<th>${header}</th>`).join('') + '</tr>';
-
-        // Create table rows
-        const rowsHtml = data.map(tx => {
-          return '<tr>' + headers.map(header => `<td>${tx[header] ?? ''}</td>`).join('') + '</tr>';
+        tbody.innerHTML = data.map(tx => {
+          return '<tr>' + headers.map(h => `<td>${tx[h] ?? ''}</td>`).join('') + '</tr>';
         }).join('');
 
-        tableBody.innerHTML = rowsHtml;
-      })
-      .catch(error => {
-        console.error('Error fetching transactions:', error);
-        const tableBody = document.querySelector('#transactions-table tbody');
-        tableBody.innerHTML = '<tr><td colspan="100%">Error loading transactions data</td></tr>';
-      });
+        pageInfo.textContent = `Page ${page} of ${totalPages}`;
+        prevBtn.disabled = page <= 1;
+        nextBtn.disabled = page >= totalPages;
+
+        currentPage = page;
+      } catch (err) {
+        console.error(err);
+        tbody.innerHTML = '<tr><td colspan="100%">Error loading transactions data.</td></tr>';
+        thead.innerHTML = '';
+        pageInfo.textContent = '';
+        prevBtn.disabled = true;
+        nextBtn.disabled = true;
+      }
+    }
+
+    prevBtn.onclick = () => {
+      if (currentPage > 1) fetchTransactions(currentPage - 1);
+    };
+
+    nextBtn.onclick = () => {
+      fetchTransactions(currentPage + 1);
+    };
+
+    fetchTransactions(currentPage);
   </script>
 </body>
 </html>

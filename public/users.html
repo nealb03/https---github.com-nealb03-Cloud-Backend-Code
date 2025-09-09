@@ -3,29 +3,13 @@
 <head>
   <title>Users</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      margin: 20px;
-    }
-    h1 {
-      color: #333;
-    }
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      margin-top: 15px;
-    }
-    th, td {
-      border: 1px solid #999;
-      padding: 8px 12px;
-      text-align: left;
-    }
-    th {
-      background-color: #f2f2f2;
-    }
-    tbody tr:nth-child(even) {
-      background-color: #f9f9f9;
-    }
+    body { font-family: Arial, sans-serif; margin: 20px; }
+    table { border-collapse: collapse; width: 100%; margin-top: 15px; }
+    th, td { border: 1px solid #999; padding: 8px 12px; text-align: left; }
+    th { background-color: #f2f2f2; }
+    tbody tr:nth-child(even) { background-color: #f9f9f9; }
+    #pagination { margin-top: 20px; }
+    #pagination button { padding: 5px 10px; margin-right: 5px; }
   </style>
 </head>
 <body>
@@ -34,35 +18,67 @@
     <thead></thead>
     <tbody></tbody>
   </table>
+  <div id="pagination">
+    <button id="prev-btn" disabled>Prev</button>
+    <span id="page-info"></span>
+    <button id="next-btn" disabled>Next</button>
+  </div>
 
   <script>
-    fetch('/api/users')
-      .then(response => response.json())
-      .then(data => {
-        const tableHead = document.querySelector('#users-table thead');
-        const tableBody = document.querySelector('#users-table tbody');
+    let currentPage = 1;
+    const limit = 10;
 
-        if (data.length === 0) {
-          tableBody.innerHTML = '<tr><td colspan="100%">No users found</td></tr>';
-          return;
-        }
+    const prevBtn = document.getElementById('prev-btn');
+    const nextBtn = document.getElementById('next-btn');
+    const pageInfo = document.getElementById('page-info');
+    const thead = document.querySelector('#users-table thead');
+    const tbody = document.querySelector('#users-table tbody');
 
-        // Create table header using keys of the first object
-        const headers = Object.keys(data[0]);
-        tableHead.innerHTML = '<tr>' + headers.map(header => `<th>${header.replace(/_/g, ' ').toUpperCase()}</th>`).join('') + '</tr>';
+    async function fetchUsers(page = 1) {
+      const res = await fetch(`/api/users?page=${page}&limit=${limit}`);
+      if (!res.ok) {
+        tbody.innerHTML = '<tr><td colspan="100%">Error loading users</td></tr>';
+        return;
+      }
 
-        // Create table rows
-        const rowsHtml = data.map(user => {
-          return '<tr>' + headers.map(header => `<td>${user[header] ?? ''}</td>`).join('') + '</tr>';
-        }).join('');
+      const { data, totalPages } = await res.json();
 
-        tableBody.innerHTML = rowsHtml;
-      })
-      .catch(error => {
-        console.error('Error fetching users:', error);
-        const tableBody = document.querySelector('#users-table tbody');
-        tableBody.innerHTML = '<tr><td colspan="100%">Error loading user data</td></tr>';
-      });
+      if (data.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="100%">No users found</td></tr>';
+        thead.innerHTML = '';
+        pageInfo.textContent = '';
+        prevBtn.disabled = true;
+        nextBtn.disabled = true;
+        return;
+      }
+
+      // Build header
+      const headers = Object.keys(data[0]);
+      thead.innerHTML = '<tr>' + headers.map(h => `<th>${h.replace(/_/g, ' ').toUpperCase()}</th>`).join('') + '</tr>';
+
+      // Build body rows
+      tbody.innerHTML = data.map(user => {
+        return '<tr>' + headers.map(h => `<td>${user[h] ?? ''}</td>`).join('') + '</tr>';
+      }).join('');
+
+      // Update pagination buttons and info
+      pageInfo.textContent = `Page ${page} of ${totalPages}`;
+      prevBtn.disabled = page <= 1;
+      nextBtn.disabled = page >= totalPages;
+
+      currentPage = page;
+    }
+
+    prevBtn.addEventListener('click', () => {
+      if (currentPage > 1) fetchUsers(currentPage - 1);
+    });
+
+    nextBtn.addEventListener('click', () => {
+      fetchUsers(currentPage + 1);
+    });
+
+    // Initial load
+    fetchUsers(currentPage);
   </script>
 </body>
 </html>
